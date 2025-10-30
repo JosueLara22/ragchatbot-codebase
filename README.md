@@ -23,8 +23,10 @@ This application is a full-stack web application that enables users to query cou
 
 2. **Install Python dependencies**
    ```bash
-   uv sync
+   uv sync --extra dev
    ```
+
+   Note: Use `--extra dev` to install development dependencies including code formatters
 
 3. **Set up environment variables**
    
@@ -53,4 +55,69 @@ uv run uvicorn app:app --reload --port 8000
 The application will be available at:
 - Web Interface: `http://localhost:8000`
 - API Documentation: `http://localhost:8000/docs`
+
+## Development
+
+### Code Quality Tools
+
+This project uses Black for automatic code formatting to maintain consistent style throughout the codebase.
+
+#### Format Code
+
+To format all Python files:
+
+**On Linux/Mac:**
+```bash
+./format.sh
+```
+
+**On Windows:**
+```bash
+format.bat
+```
+
+**Or directly with uv:**
+```bash
+uv run black .
+```
+
+#### Check Formatting
+
+To check if code is properly formatted without making changes:
+
+**On Linux/Mac:**
+```bash
+./check-format.sh
+```
+
+**On Windows:**
+```bash
+check-format.bat
+```
+
+**Or directly with uv:**
+```bash
+uv run black --check --diff .
+```
+
+#### Run All Quality Checks
+
+To run all code quality checks:
+
+**On Linux/Mac:**
+```bash
+./quality-check.sh
+```
+
+**On Windows:**
+```bash
+quality-check.bat
+```
+
+### Black Configuration
+
+Black is configured in `pyproject.toml` with the following settings:
+- Line length: 88 characters
+- Target Python version: 3.13
+- Excludes common directories like `.venv`, `build`, `dist`, etc.
 
