@@ -1,6 +1,7 @@
 import google.generativeai as genai
 from typing import List, Optional, Dict, Any
 
+
 class AIGenerator:
     """Handles interactions with Google's Gemini API for generating responses"""
 
@@ -57,14 +58,17 @@ Provide only the direct answer to what was asked.
             generation_config={
                 "temperature": 0,
                 "max_output_tokens": 800,
-            }
+            },
         )
 
-    def generate_response(self, query: str,
-                         conversation_history: Optional[str] = None,
-                         tools: Optional[List] = None,
-                         tool_manager=None,
-                         max_rounds: int = 2) -> str:
+    def generate_response(
+        self,
+        query: str,
+        conversation_history: Optional[str] = None,
+        tools: Optional[List] = None,
+        tool_manager=None,
+        max_rounds: int = 2,
+    ) -> str:
         """
         Generate AI response with multi-round tool usage support via chat sessions.
 
@@ -99,7 +103,7 @@ Provide only the direct answer to what was asked.
                     "temperature": 0,
                     "max_output_tokens": 800,
                 },
-                tools=gemini_tools
+                tools=gemini_tools,
             )
 
             # Start chat session with tools
@@ -125,8 +129,7 @@ Provide only the direct answer to what was asked.
                         function_responses.append(
                             genai.protos.Part(
                                 function_response=genai.protos.FunctionResponse(
-                                    name=fc.name,
-                                    response={"result": result}
+                                    name=fc.name, response={"result": result}
                                 )
                             )
                         )
@@ -174,14 +177,18 @@ Provide only the direct answer to what was asked.
 
             # Handle nested properties for objects
             if prop_schema.get("type") == "object" and "properties" in prop_schema:
-                converted_prop["properties"] = self._convert_schema_properties(prop_schema["properties"])
+                converted_prop["properties"] = self._convert_schema_properties(
+                    prop_schema["properties"]
+                )
 
             # Handle array items
             if prop_schema.get("type") == "array" and "items" in prop_schema:
                 items_schema = prop_schema["items"]
                 converted_items = {}
                 if "type" in items_schema:
-                    converted_items["type"] = self._convert_schema_type(items_schema["type"])
+                    converted_items["type"] = self._convert_schema_type(
+                        items_schema["type"]
+                    )
                 if "description" in items_schema:
                     converted_items["description"] = items_schema["description"]
                 converted_prop["items"] = genai.protos.Schema(**converted_items)
@@ -208,7 +215,9 @@ Provide only the direct answer to what was asked.
                 input_schema = tool.get("input_schema", {})
 
                 # Convert properties recursively
-                converted_properties = self._convert_schema_properties(input_schema.get("properties", {}))
+                converted_properties = self._convert_schema_properties(
+                    input_schema.get("properties", {})
+                )
 
                 # Create schema dict
                 schema_dict = {
@@ -223,7 +232,7 @@ Provide only the direct answer to what was asked.
                 function_decl = genai.protos.FunctionDeclaration(
                     name=tool.get("name"),
                     description=tool.get("description", ""),
-                    parameters=genai.protos.Schema(**schema_dict)
+                    parameters=genai.protos.Schema(**schema_dict),
                 )
                 gemini_functions.append(function_decl)
 
@@ -245,7 +254,7 @@ Provide only the direct answer to what was asked.
             candidate = response.candidates[0]
             if candidate.content and candidate.content.parts:
                 for part in candidate.content.parts:
-                    if hasattr(part, 'function_call') and part.function_call:
+                    if hasattr(part, "function_call") and part.function_call:
                         function_calls.append(part.function_call)
 
         return function_calls

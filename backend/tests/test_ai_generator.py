@@ -4,7 +4,7 @@ import sys
 import os
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from ai_generator import AIGenerator
 import google.generativeai as genai
@@ -27,32 +27,30 @@ def mock_tools():
             "description": "Get course outline",
             "input_schema": {
                 "type": "object",
-                "properties": {
-                    "course_title": {"type": "string"}
-                },
-                "required": []
-            }
+                "properties": {"course_title": {"type": "string"}},
+                "required": [],
+            },
         },
         {
             "name": "search_course_content",
             "description": "Search course content",
             "input_schema": {
                 "type": "object",
-                "properties": {
-                    "query": {"type": "string"}
-                },
-                "required": ["query"]
-            }
-        }
+                "properties": {"query": {"type": "string"}},
+                "required": ["query"],
+            },
+        },
     ]
 
 
 class TestSequentialToolCalling:
     """Test suite for multi-round tool calling functionality"""
 
-    def test_single_tool_call_terminates_immediately(self, mock_tool_manager, mock_tools):
+    def test_single_tool_call_terminates_immediately(
+        self, mock_tool_manager, mock_tools
+    ):
         """Test that a single tool call followed by text response terminates"""
-        with patch('google.generativeai.configure'):
+        with patch("google.generativeai.configure"):
             ai_gen = AIGenerator(api_key="test_key", model="gemini-1.5-flash")
 
         # Mock first response: tool use
@@ -67,8 +65,12 @@ class TestSequentialToolCalling:
         mock_response_1.candidates = [Mock(content=Mock(parts=[mock_part_1]))]
 
         # Mock second response: final answer (no function call)
-        mock_part_2 = Mock(spec=['text'])
-        delattr(mock_part_2, 'function_call') if hasattr(mock_part_2, 'function_call') else None
+        mock_part_2 = Mock(spec=["text"])
+        (
+            delattr(mock_part_2, "function_call")
+            if hasattr(mock_part_2, "function_call")
+            else None
+        )
         mock_response_2 = Mock()
         mock_response_2.text = "Here is the course outline with 10 lessons..."
         mock_response_2.candidates = [Mock(content=Mock(parts=[mock_part_2]))]
@@ -77,18 +79,20 @@ class TestSequentialToolCalling:
         mock_chat = MagicMock()
         mock_chat.send_message = Mock(side_effect=[mock_response_1, mock_response_2])
 
-        with patch('google.generativeai.GenerativeModel') as MockGenModel:
+        with patch("google.generativeai.GenerativeModel") as MockGenModel:
             mock_model_instance = Mock()
             mock_model_instance.model_name = "gemini-1.5-flash"
             mock_model_instance.start_chat = Mock(return_value=mock_chat)
             MockGenModel.return_value = mock_model_instance
 
-            mock_tool_manager.execute_tool.return_value = "Course: Python\nLessons: 1-10"
+            mock_tool_manager.execute_tool.return_value = (
+                "Course: Python\nLessons: 1-10"
+            )
 
             result = ai_gen.generate_response(
                 query="What lessons are in Python course?",
                 tools=mock_tools,
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
             # Should have made exactly 1 tool call
@@ -98,7 +102,7 @@ class TestSequentialToolCalling:
 
     def test_two_sequential_tool_calls(self, mock_tool_manager, mock_tools):
         """Test that two sequential tool calls work correctly"""
-        with patch('google.generativeai.configure'):
+        with patch("google.generativeai.configure"):
             ai_gen = AIGenerator(api_key="test_key", model="gemini-1.5-flash")
 
         # Mock first response: first tool call
@@ -124,22 +128,26 @@ class TestSequentialToolCalling:
         mock_response_2.candidates = [Mock(content=Mock(parts=[mock_part_2]))]
 
         # Mock third response: final answer
-        mock_part_3 = Mock(spec=['text'])
-        delattr(mock_part_3, 'function_call') if hasattr(mock_part_3, 'function_call') else None
+        mock_part_3 = Mock(spec=["text"])
+        (
+            delattr(mock_part_3, "function_call")
+            if hasattr(mock_part_3, "function_call")
+            else None
+        )
 
         mock_response_3 = Mock()
-        mock_response_3.text = "Lesson 5 covers advanced topics like recursion and dynamic programming."
+        mock_response_3.text = (
+            "Lesson 5 covers advanced topics like recursion and dynamic programming."
+        )
         mock_response_3.candidates = [Mock(content=Mock(parts=[mock_part_3]))]
 
         # Mock chat session
         mock_chat = MagicMock()
-        mock_chat.send_message = Mock(side_effect=[
-            mock_response_1,
-            mock_response_2,
-            mock_response_3
-        ])
+        mock_chat.send_message = Mock(
+            side_effect=[mock_response_1, mock_response_2, mock_response_3]
+        )
 
-        with patch('google.generativeai.GenerativeModel') as MockGenModel:
+        with patch("google.generativeai.GenerativeModel") as MockGenModel:
             mock_model_instance = Mock()
             mock_model_instance.model_name = "gemini-1.5-flash"
             mock_model_instance.start_chat = Mock(return_value=mock_chat)
@@ -147,14 +155,14 @@ class TestSequentialToolCalling:
 
             mock_tool_manager.execute_tool.side_effect = [
                 "Course: Python\nLesson 5: Advanced Topics",
-                "[Python - Lesson 5]\nContent about recursion and dynamic programming..."
+                "[Python - Lesson 5]\nContent about recursion and dynamic programming...",
             ]
 
             result = ai_gen.generate_response(
                 query="What does lesson 5 of Python course teach?",
                 tools=mock_tools,
                 tool_manager=mock_tool_manager,
-                max_rounds=2
+                max_rounds=2,
             )
 
             # Should have made exactly 2 tool calls
@@ -163,7 +171,7 @@ class TestSequentialToolCalling:
 
     def test_max_rounds_enforced(self, mock_tool_manager, mock_tools):
         """Test that max_rounds limit is enforced (stops after 2 rounds)"""
-        with patch('google.generativeai.configure'):
+        with patch("google.generativeai.configure"):
             ai_gen = AIGenerator(api_key="test_key", model="gemini-1.5-flash")
 
         # Mock responses that always want to call tools
@@ -181,8 +189,12 @@ class TestSequentialToolCalling:
             return mock_response
 
         # Final response after max rounds
-        mock_final_part = Mock(spec=['text'])
-        delattr(mock_final_part, 'function_call') if hasattr(mock_final_part, 'function_call') else None
+        mock_final_part = Mock(spec=["text"])
+        (
+            delattr(mock_final_part, "function_call")
+            if hasattr(mock_final_part, "function_call")
+            else None
+        )
 
         mock_final_response = Mock()
         mock_final_response.text = "Final answer after max rounds"
@@ -190,13 +202,15 @@ class TestSequentialToolCalling:
 
         # Mock chat session
         mock_chat = MagicMock()
-        mock_chat.send_message = Mock(side_effect=[
-            create_tool_call_response(),  # Round 1 tool call
-            create_tool_call_response(),  # Round 2 tool call
-            mock_final_response            # After round 2 function response
-        ])
+        mock_chat.send_message = Mock(
+            side_effect=[
+                create_tool_call_response(),  # Round 1 tool call
+                create_tool_call_response(),  # Round 2 tool call
+                mock_final_response,  # After round 2 function response
+            ]
+        )
 
-        with patch('google.generativeai.GenerativeModel') as MockGenModel:
+        with patch("google.generativeai.GenerativeModel") as MockGenModel:
             mock_model_instance = Mock()
             mock_model_instance.model_name = "gemini-1.5-flash"
             mock_model_instance.start_chat = Mock(return_value=mock_chat)
@@ -208,7 +222,7 @@ class TestSequentialToolCalling:
                 query="Complex question",
                 tools=mock_tools,
                 tool_manager=mock_tool_manager,
-                max_rounds=2
+                max_rounds=2,
             )
 
             # Should stop after 2 rounds
@@ -217,12 +231,16 @@ class TestSequentialToolCalling:
 
     def test_no_tool_call_immediate_answer(self, mock_tool_manager, mock_tools):
         """Test that queries not requiring tools get immediate answers"""
-        with patch('google.generativeai.configure'):
+        with patch("google.generativeai.configure"):
             ai_gen = AIGenerator(api_key="test_key", model="gemini-1.5-flash")
 
         # Response with no function call (general knowledge)
-        mock_part = Mock(spec=['text'])
-        delattr(mock_part, 'function_call') if hasattr(mock_part, 'function_call') else None
+        mock_part = Mock(spec=["text"])
+        (
+            delattr(mock_part, "function_call")
+            if hasattr(mock_part, "function_call")
+            else None
+        )
 
         mock_response = Mock()
         mock_response.text = "Python is a high-level programming language..."
@@ -232,7 +250,7 @@ class TestSequentialToolCalling:
         mock_chat = MagicMock()
         mock_chat.send_message = Mock(return_value=mock_response)
 
-        with patch('google.generativeai.GenerativeModel') as MockGenModel:
+        with patch("google.generativeai.GenerativeModel") as MockGenModel:
             mock_model_instance = Mock()
             mock_model_instance.model_name = "gemini-1.5-flash"
             mock_model_instance.start_chat = Mock(return_value=mock_chat)
@@ -241,7 +259,7 @@ class TestSequentialToolCalling:
             result = ai_gen.generate_response(
                 query="What is Python?",
                 tools=mock_tools,
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
             # Should not have executed any tools
@@ -251,7 +269,7 @@ class TestSequentialToolCalling:
 
     def test_tool_execution_error_handling(self, mock_tool_manager, mock_tools):
         """Test graceful handling of tool execution errors"""
-        with patch('google.generativeai.configure'):
+        with patch("google.generativeai.configure"):
             ai_gen = AIGenerator(api_key="test_key", model="gemini-1.5-flash")
 
         # Response with function call
@@ -269,19 +287,21 @@ class TestSequentialToolCalling:
         mock_chat = MagicMock()
         mock_chat.send_message = Mock(return_value=mock_response)
 
-        with patch('google.generativeai.GenerativeModel') as MockGenModel:
+        with patch("google.generativeai.GenerativeModel") as MockGenModel:
             mock_model_instance = Mock()
             mock_model_instance.model_name = "gemini-1.5-flash"
             mock_model_instance.start_chat = Mock(return_value=mock_chat)
             MockGenModel.return_value = mock_model_instance
 
             # Tool execution fails
-            mock_tool_manager.execute_tool.side_effect = Exception("Database connection failed")
+            mock_tool_manager.execute_tool.side_effect = Exception(
+                "Database connection failed"
+            )
 
             result = ai_gen.generate_response(
                 query="Search for something",
                 tools=mock_tools,
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
             # Should return error message
@@ -291,7 +311,7 @@ class TestSequentialToolCalling:
 
     def test_context_preservation_across_rounds(self, mock_tool_manager, mock_tools):
         """Test that context from previous rounds is preserved in chat session"""
-        with patch('google.generativeai.configure'):
+        with patch("google.generativeai.configure"):
             ai_gen = AIGenerator(api_key="test_key", model="gemini-1.5-flash")
 
         # Mock first response: first tool call
@@ -317,8 +337,12 @@ class TestSequentialToolCalling:
         mock_response_2.candidates = [Mock(content=Mock(parts=[mock_part_2]))]
 
         # Mock final response
-        mock_part_3 = Mock(spec=['text'])
-        delattr(mock_part_3, 'function_call') if hasattr(mock_part_3, 'function_call') else None
+        mock_part_3 = Mock(spec=["text"])
+        (
+            delattr(mock_part_3, "function_call")
+            if hasattr(mock_part_3, "function_call")
+            else None
+        )
 
         mock_response_3 = Mock()
         mock_response_3.text = "Based on the outline, lesson 5 covers advanced topics."
@@ -326,13 +350,11 @@ class TestSequentialToolCalling:
 
         # Mock chat session to verify multiple calls on same object
         mock_chat = MagicMock()
-        mock_chat.send_message = Mock(side_effect=[
-            mock_response_1,
-            mock_response_2,
-            mock_response_3
-        ])
+        mock_chat.send_message = Mock(
+            side_effect=[mock_response_1, mock_response_2, mock_response_3]
+        )
 
-        with patch('google.generativeai.GenerativeModel') as MockGenModel:
+        with patch("google.generativeai.GenerativeModel") as MockGenModel:
             mock_model_instance = Mock()
             mock_model_instance.model_name = "gemini-1.5-flash"
             mock_model_instance.start_chat = Mock(return_value=mock_chat)
@@ -340,13 +362,13 @@ class TestSequentialToolCalling:
 
             mock_tool_manager.execute_tool.side_effect = [
                 "Course: Python\nLessons:\n1. Intro\n5. Advanced Topics",
-                "Lesson 5 discusses recursion..."
+                "Lesson 5 discusses recursion...",
             ]
 
             result = ai_gen.generate_response(
                 query="Multi-step query",
                 tools=mock_tools,
-                tool_manager=mock_tool_manager
+                tool_manager=mock_tool_manager,
             )
 
             # Verify chat.send_message was called multiple times on same chat object
