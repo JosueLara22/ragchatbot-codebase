@@ -40,10 +40,16 @@ class QueryRequest(BaseModel):
     query: str
     session_id: Optional[str] = None
 
+class SourceInfo(BaseModel):
+    """Source information with optional links"""
+    text: str
+    course_link: Optional[str] = None
+    lesson_link: Optional[str] = None
+
 class QueryResponse(BaseModel):
     """Response model for course queries"""
     answer: str
-    sources: List[str]
+    sources: List[SourceInfo]
     session_id: str
 
 class CourseStats(BaseModel):
@@ -82,6 +88,15 @@ async def get_course_stats():
             total_courses=analytics["total_courses"],
             course_titles=analytics["course_titles"]
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/session/{session_id}")
+async def clear_session(session_id: str):
+    """Clear a conversation session"""
+    try:
+        rag_system.session_manager.clear_session(session_id)
+        return {"status": "success", "message": f"Session {session_id} cleared"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_click",
+      "Bash(uv run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nMigrate from Anthropic Claude to Google Gemini API and enhance RAG system\n\nMajor changes:\n- Migrated AI generator from Anthropic Claude API to Google Gemini API with multi-round tool calling support\n- Added CourseOutlineTool for retrieving course structure and lesson lists\n- Enhanced source tracking with clickable links to courses and lessons\n- Improved UI with new chat button and better styling\n- Added session clearing functionality\n- Updated dependencies and configuration for Gemini integration\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
